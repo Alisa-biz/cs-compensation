@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS Compensation Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e0f11; --surface: #16181c; --surface2: #1e2026;
+    --border: #2a2d35; --border-light: #363a45;
+    --text: #e8eaf0; --text-muted: #7a7f8e; --text-dim: #4a4f5e;
+    --accent: #4f8ef7; --accent-glow: rgba(79,142,247,0.15);
+    --green: #3ecf8e; --yellow: #f5a623; --orange: #f07048; --red: #e85555;
+    --font-mono: 'IBM Plex Mono', monospace; --font-sans: 'IBM Plex Sans', sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh; }
+
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 32px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; }
+  .header-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .header h1 { font-family: var(--font-mono); font-size: 14px; font-weight: 600; letter-spacing: 0.02em; }
+  .header-sub { font-size: 12px; color: var(--text-muted); margin-left: auto; font-family: var(--font-mono); }
+
+  .main { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+  .step-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+  .selector-section { margin-bottom: 28px; }
+  .btn-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; font-weight: 500; padding: 9px 16px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .btn:hover { border-color: var(--border-light); color: var(--text); }
+  .btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+  .btn.sev-low.active    { background: rgba(62,207,142,0.1); border-color: var(--green); color: var(--green); }
+  .btn.sev-medium.active { background: rgba(245,166,35,0.1); border-color: var(--yellow); color: var(--yellow); }
+  .btn.sev-high.active   { background: rgba(240,112,72,0.1); border-color: var(--orange); color: var(--orange); }
+  .btn.sev-critical.active { background: rgba(232,85,85,0.1); border-color: var(--red); color: var(--red); }
+
+  /* Order section */
+  .order-section { display: none; flex-wrap: wrap; align-items: flex-start; gap: 28px; margin-bottom: 28px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  .order-section.show { display: flex; }
+  .order-col { display: flex; flex-direction: column; gap: 8px; }
+  .order-col-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+  .toggle-group { display: flex; gap: 6px; }
+
+  .order-input-wrap { position: relative; display: inline-flex; align-items: center; }
+  .order-input-wrap .prefix { position: absolute; left: 12px; font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); pointer-events: none; }
+  .order-input { background: var(--surface2); border: 1px solid var(--border-light); color: var(--text); font-family: var(--font-mono); font-size: 13px; font-weight: 500; padding: 8px 12px 8px 26px; border-radius: 6px; width: 150px; outline: none; transition: border-color 0.15s; }
+  .order-input:focus { border-color: var(--accent); }
+  .order-input::placeholder { color: var(--text-dim); }
+  .order-hint { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 4px; }
+
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  /* Result */
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; animation: slideIn 0.2s ease; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .result-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .badge { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .badge-low    { background: rgba(62,207,142,0.12); color: var(--green); }
+  .badge-medium { background: rgba(245,166,35,0.12); color: var(--yellow); }
+  .badge-high   { background: rgba(240,112,72,0.12); color: var(--orange); }
+  .badge-critical { background: rgba(232,85,85,0.12); color: var(--red); }
+  .result-title { font-size: 14px; font-weight: 500; }
+
+  .result-body { padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .result-body { grid-template-columns: 1fr; } }
+  .result-section h3 { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+  .result-section p { font-size: 13px; line-height: 1.7; color: var(--text); }
+
+  /* Copy buttons */
+  .copy-btn { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--border-light); color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); background: rgba(62,207,142,0.08); }
+
+  /* Credits */
+  .credit-big { font-family: var(--font-mono); font-size: 28px; font-weight: 600; color: var(--accent); display: block; margin-bottom: 4px; }
+  .credit-big.calculated { color: var(--green); }
+  .credit-label { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+  .credit-bonus { font-size: 12px; color: var(--yellow); font-family: var(--font-mono); margin-top: 6px; display: block; }
+  .credit-hint { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 6px; display: block; }
+
+  /* Escalation */
+  .escalation-box { margin: 0 24px 24px; padding: 14px 16px; background: rgba(232,85,85,0.07); border: 1px solid rgba(232,85,85,0.22); border-radius: 8px; font-size: 13px; line-height: 1.6; }
+  .esc-title { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--red); margin-bottom: 8px; text-transform: uppercase; }
+  .esc-copy-btn { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 6px 12px; background: rgba(232,85,85,0.06); border: 1px solid rgba(232,85,85,0.25); color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
+  .esc-copy-btn:hover { color: var(--red); border-color: var(--red); }
+  .esc-copy-btn.copied { color: var(--green); border-color: var(--green); background: rgba(62,207,142,0.08); }
+
+  /* Reminder */
+  .reminder-box { margin: 0 24px 24px; padding: 14px 16px; background: rgba(79,142,247,0.06); border: 1px solid rgba(79,142,247,0.2); border-radius: 8px; font-size: 13px; line-height: 1.6; }
+  .rem-title { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; }
+
+  /* Sev info */
+  .sev-info { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: 12px; line-height: 1.65; color: var(--text-muted); }
+  .sev-info strong { font-family: var(--font-mono); font-size: 11px; font-weight: 600; margin-right: 6px; }
+  .sev-row { margin-bottom: 6px; } .sev-row:last-child { margin-bottom: 0; }
+  .tag-low { color: var(--green); } .tag-medium { color: var(--yellow); } .tag-high { color: var(--orange); } .tag-critical { color: var(--red); }
+
+  .empty-state { text-align: center; padding: 60px 24px; color: var(--text-dim); font-family: var(--font-mono); font-size: 13px; border: 1px dashed var(--border); border-radius: 12px; }
+  .empty-state .arrow { font-size: 24px; display: block; margin-bottom: 12px; opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">⚡</div>
+  <h1>CS Compensation Guide</h1>
+  <span class="header-sub">Internal use only</span>
+</div>
+
+<div class="main">
+
+  <div class="selector-section">
+    <div class="step-label">01 — Issue Reason</div>
+    <div class="btn-grid" id="reason-grid">
+      <button class="btn" data-reason="delay-no-loss">Order Delay / No Loss</button>
+      <button class="btn" data-reason="delay-loss">Order Delay / Loss of Items</button>
+      <button class="btn" data-reason="supplier-error">Supplier Purchase Errors</button>
+      <button class="btn" data-reason="security">Security Concerns</button>
+      <button class="btn" data-reason="technical">Technical Issues</button>
+      <button class="btn" data-reason="communication">Communication / Bad Experience</button>
+      <button class="btn" data-reason="goodwill">Goodwill</button>
+    </div>
+  </div>
+
+  <div class="selector-section">
+    <div class="step-label">02 — Customer Tier</div>
+    <div class="btn-grid" id="tier-grid">
+      <button class="btn" data-tier="new">New</button>
+      <button class="btn" data-tier="core">Core</button>
+      <button class="btn" data-tier="elite-low">Elite Low</button>
+      <button class="btn" data-tier="elite-medium">Elite Medium</button>
+      <button class="btn" data-tier="elite-high">Elite High</button>
+      <button class="btn" data-tier="royalty">Royalty</button>
+    </div>
+  </div>
+
+  <div class="selector-section">
+    <div class="step-label">03 — Severity</div>
+    <div id="sev-descriptions" class="sev-info" style="display:none;"></div>
+    <div class="btn-grid" id="sev-grid">
+      <button class="btn sev-low" data-sev="low">Low</button>
+      <button class="btn sev-medium" data-sev="medium">Medium</button>
+      <button class="btn sev-high" data-sev="high">High</button>
+      <button class="btn sev-critical" data-sev="critical">Critical</button>
+    </div>
+  </div>
+
+  <div class="order-section" id="order-section">
+    <div class="order-col" id="order-threshold-col">
+      <div class="order-col-label">Order value</div>
+      <div class="toggle-group" id="order-grid">
+        <button class="btn active" data-order="under">Under $99.99</button>
+        <button class="btn" data-order="over">$99.99 or over</button>
+      </div>
+    </div>
+    <div class="order-col" id="order-value-col" style="display:none;">
+      <div class="order-col-label">Order amount — auto-calculates credits</div>
+      <div class="order-input-wrap">
+        <span class="prefix">$</span>
+        <input class="order-input" id="order-value-input" type="number" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <span class="order-hint">Enter the affected order value</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div id="result-container">
+    <div class="empty-state"><span class="arrow">↑</span>Select reason, tier &amp; severity to see the compensation guide</div>
+  </div>
+
+</div>
+
+<script>
+const state = { reason: null, tier: null, sev: null, order: 'under', orderValue: null };
+
+const severityDescriptions = {
+  'delay-no-loss': { low: 'Minor delay >13 min, completes smoothly. "It took longer than expected but I got it."', medium: 'Noticeable wait 13–20 min, had to check in. "I had to message twice."', high: 'Long delay / lockout >20 min, followed up 3+ times. "This is ridiculous, how many more times."', critical: 'Extreme delay >45 min, eventually received correctly. "I\'m posting this publicly / chargeback threat."' },
+  'delay-loss': { low: 'Small low-value loss (promo, minor seasonal use). "Missed extra currency because of delay."', medium: 'User missed a small campaign window, had to buy elsewhere to supplement.', high: 'Main purpose defeated — missed event/promo, custom packs wasted.', critical: 'Repeated High severity case. Likely chargeback.' },
+  'supplier-error': { low: 'Mistake with no loss (e.g. receipt sent in wrong language).', medium: '1 pack error requiring replacement or re-buy; wrong account.', high: 'Multiple packs requiring replacement/re-buy; wrong account; refund needed.', critical: 'Repeated error for the same user.' },
+  'security': { low: 'Single supplier logout / out-of-US login.', medium: 'Repeated supplier logouts / out-of-US logins — causing anxiety.', high: 'Logouts/logins are our suppliers but credible compromise suspicion, unknown source of lockouts, unapproved purchases.', critical: 'Confirmed compromise or multiple reports. User banned from game — security breach / PR / legal risk.' },
+  'technical': { low: 'Existing minor app bug; workaround exists.', medium: 'Blocked temporarily; can proceed later.', high: 'Core workflow blocked (pay/order/track).', critical: 'Outage/major incident; billing failures; many customers blocked.' },
+  'communication': { low: 'Small misunderstanding corrected.', medium: 'Customer had to chase a promised update/receipt; mild trust hit.', high: 'Repeated miscommunication, conflicting ETAs, or dismissive tone; trust shaken.', critical: 'Misleading info/silence during major issue, or conduct complaint with escalation risk.' },
+  'goodwill': { low: 'Welcome / education gift for new player.', medium: 'User is upset.', high: 'VIP user showing signs of likely churn.', critical: 'Top 50 Whale is upset — showing churn signs.' }
+};
+
+const data = {
+  'delay-no-loss': {
+    new: {
+      low:      { under: { action: 'Once resolved.', credits: 1000, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead in shift immediately for single ownership.' } },
+      medium:   { under: { action: 'Thank the customer for their patience. Once resolved.', credits: 2000, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead in shift immediately for single ownership.' } },
+      high:     { under: { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 3000, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead in shift immediately for single ownership.' } },
+      critical: { under: { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 3500, creditType: 'fixed', escalate: true, escalateMsg: 'Bring case to visibility on #cs-escalations and tag @backbone-support due to PR/chargeback threat.' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead in shift immediately for single ownership.' } }
+    },
+    core: {
+      low:      { action: 'Accept feedback (if any).', credits: null },
+      medium:   { action: 'Thank the customer for their patience. Once resolved.', credits: 500, creditType: 'fixed' },
+      high:     { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 1000, creditType: 'fixed' },
+      critical: { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 1500, creditType: 'fixed', escalate: true, escalateMsg: 'Bring case to visibility on #cs-escalations and tag @backbone-support due to PR/chargeback threat.' }
+    },
+    'elite-low': {
+      low:      { action: 'Accept feedback (if any).', credits: null },
+      medium:   { action: 'Thank the customer for their patience. Once resolved.', credits: 1000, creditType: 'fixed' },
+      high:     { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 2000, creditType: 'fixed' },
+      critical: { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 2500, creditType: 'fixed', escalate: true, escalateMsg: 'Bring case to visibility on #cs-escalations and tag @backbone-support due to PR/chargeback threat.' }
+    },
+    'elite-medium': {
+      low:      { action: 'Once resolved.', credits: 1000, creditType: 'fixed' },
+      medium:   { action: 'Thank the customer for their patience. Once resolved.', credits: 2000, creditType: 'fixed' },
+      high:     { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 3000, creditType: 'fixed' },
+      critical: { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 4500, creditType: 'fixed', escalate: true, escalateMsg: 'Bring case to visibility on #cs-escalations and tag @backbone-support due to PR/chargeback threat.' }
+    },
+    'elite-high': {
+      low:      { action: 'Once resolved.', credits: 1500, creditType: 'fixed' },
+      medium:   { action: 'Thank the customer for their patience. Once resolved.', credits: 3000, creditType: 'fixed' },
+      high:     { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 4500, creditType: 'fixed' },
+      critical: { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 6000, creditType: 'fixed', escalate: true, escalateMsg: 'Bring case to visibility on #cs-escalations and tag @backbone-support due to PR/chargeback threat.' }
+    },
+    royalty: {
+      low:      { action: 'Once resolved.', credits: 5000, creditType: 'fixed' },
+      medium:   { action: 'Thank the customer for their patience. Once resolved.', credits: 10000, creditType: 'fixed' },
+      high:     { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 15000, creditType: 'fixed' },
+      critical: { action: 'Follow up with suppliers, reassure and provide a concrete ETA. Once resolved.', credits: 20000, creditType: 'fixed', escalate: true, escalateMsg: 'Bring case to visibility on #cs-escalations and tag @backbone-support due to PR/chargeback threat.' }
+    }
+  },
+  'delay-loss': {
+    new: {
+      low:      { under: { action: 'Issue credits aligned to the affected purchase.', credits: 50, creditType: 'percent-purchase' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      medium:   { under: { action: 'Issue credits aligned to the affected purchase.', credits: 100, creditType: 'percent-purchase' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      high:     { under: { action: 'Issue credits aligned to the affected purchase plus bonus.', credits: 100, creditType: 'percent-purchase', bonus: 10, bonusLabel: '+10% of affected order' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      critical: { under: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } }
+    },
+    core: {
+      low:      { action: 'Issue 20% of affected order in credits.', credits: 20, creditType: 'percent-order' },
+      medium:   { action: 'Issue credits aligned to the affected purchase.', credits: 40, creditType: 'percent-purchase' },
+      high:     { action: 'Issue credits aligned to the affected purchase.', credits: 100, creditType: 'percent-purchase' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }
+    },
+    'elite-low': {
+      low:      { action: 'Issue 30% of affected order in credits.', credits: 30, creditType: 'percent-order' },
+      medium:   { action: 'Issue credits aligned to the affected purchase.', credits: 50, creditType: 'percent-purchase' },
+      high:     { action: 'Issue credits aligned to the affected purchase.', credits: 100, creditType: 'percent-purchase' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }
+    },
+    'elite-medium': {
+      low:      { action: 'Issue 40% of affected order in credits.', credits: 40, creditType: 'percent-order' },
+      medium:   { action: 'Issue credits aligned to the affected purchase.', credits: 60, creditType: 'percent-purchase' },
+      high:     { action: 'Issue credits aligned to the affected purchase plus bonus.', credits: 100, creditType: 'percent-purchase', bonus: 10, bonusLabel: '+10% of affected purchase' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' }
+    },
+    'elite-high': {
+      low:      { action: 'Issue 50% of affected order in credits.', credits: 50, creditType: 'percent-order' },
+      medium:   { action: 'Issue credits aligned to the affected purchase.', credits: 70, creditType: 'percent-purchase' },
+      high:     { action: 'Issue credits aligned to the affected purchase plus bonus.', credits: 100, creditType: 'percent-purchase', bonus: 15, bonusLabel: '+15% of affected purchase' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' }
+    },
+    royalty: {
+      low:      { action: 'Issue credits aligned to the affected purchase.', credits: 100, creditType: 'percent-purchase' },
+      medium:   { action: 'Issue credits aligned to the affected purchase plus bonus.', credits: 100, creditType: 'percent-purchase', bonus: 10, bonusLabel: '+10% of affected order' },
+      high:     { action: 'Issue credits aligned to the affected purchase plus bonus.', credits: 100, creditType: 'percent-purchase', bonus: 30, bonusLabel: '+30% of affected order' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' }
+    }
+  },
+  'supplier-error': {
+    new: {
+      low:      { under: { action: 'Reassure the customer for their safety.', credits: 1000, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      medium:   { under: { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 1500, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      high:     { under: { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 2000, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      critical: { under: { escalate: true, escalateMsg: 'Escalate to Team Lead immediately for de-escalation and single ownership.' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } }
+    },
+    core: {
+      low:      { action: 'Reassure the customer for their safety.', credits: 500, creditType: 'fixed' },
+      medium:   { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 500, creditType: 'fixed' },
+      high:     { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 1000, creditType: 'fixed' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }
+    },
+    'elite-low': {
+      low:      { action: 'Reassure the customer for their safety.', credits: 500, creditType: 'fixed' },
+      medium:   { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 1000, creditType: 'fixed' },
+      high:     { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 1500, creditType: 'fixed' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }
+    },
+    'elite-medium': {
+      low:      { action: 'Reassure the customer for their safety.', credits: 1000, creditType: 'fixed' },
+      medium:   { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 1500, creditType: 'fixed' },
+      high:     { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 2000, creditType: 'fixed' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' }
+    },
+    'elite-high': {
+      low:      { action: 'Reassure the customer for their safety.', credits: 1000, creditType: 'fixed' },
+      medium:   { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 2000, creditType: 'fixed' },
+      high:     { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 3000, creditType: 'fixed' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' }
+    },
+    royalty: {
+      low:      { action: 'Reassure the customer for their safety.', credits: 1500, creditType: 'fixed' },
+      medium:   { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 2500, creditType: 'fixed' },
+      high:     { action: 'Correct via re-delivery with the supplier + confirm correct arrival.', credits: 4000, creditType: 'fixed' },
+      critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' }
+    }
+  },
+  'security': {
+    new: {
+      low:      { under: { action: 'Remind the supplier due to perceived safety risk. Reassure the customer.', credits: 500, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      medium:   { under: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      high:     { under: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' }, over: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' } },
+      critical: { under: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' }, over: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' } }
+    },
+    core:        { low: { action: 'Remind the supplier not to log in if unauthorized due to perceived safety risk. Reassure the customer.', credits: null }, medium: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, high: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' }, critical: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' } },
+    'elite-low': { low: { action: 'Remind the supplier due to perceived safety risk. Reassure the customer.', credits: 500, creditType: 'fixed' }, medium: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, high: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' }, critical: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' } },
+    'elite-medium': { low: { action: 'Remind the supplier due to perceived safety risk. Reassure the customer.', credits: 1000, creditType: 'fixed' }, medium: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, high: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' }, critical: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' } },
+    'elite-high':   { low: { action: 'Remind the supplier due to perceived safety risk. Reassure the customer.', credits: 1500, creditType: 'fixed' }, medium: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, high: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' }, critical: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' } },
+    royalty:        { low: { action: 'Remind the supplier due to perceived safety risk. Reassure the customer.', credits: 2000, creditType: 'fixed' }, medium: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, high: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' }, critical: { escalate: true, escalateMsg: 'Escalate to #cs-escalation and tag @r-d-team for immediate support (potential block for payments/app).' } }
+  },
+  'technical': {
+    new: {
+      low:      { under: { action: 'Provide education on the workaround. Reassure we are prioritising a fix if none exists.', credits: null }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      medium:   { under: { action: 'Troubleshoot + set expectations. If unknown bug, log it on ClickUp for @r-d-team.', credits: 1500, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      high:     { under: { action: 'Politely ask for patience while we investigate. Escalate on #cs-escalations and tag @r-d-team for support. Once resolved.', credits: 2000, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      critical: { under: { action: 'Politely ask for patience while we investigate.', escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag @r-d-team for support. Once resolved, compensate as per the agreement in the escalation.' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } }
+    },
+    core:        { low: { action: 'Provide education on the workaround. Reassure we are prioritising a fix if none exists.', credits: null }, medium: { action: 'Troubleshoot + set expectations. If unknown bug, log it on ClickUp for @r-d-team.', credits: 1000, creditType: 'fixed' }, high: { action: 'Politely ask for patience while we investigate. Escalate on #cs-escalations and tag @r-d-team. Once resolved.', credits: 1500, creditType: 'fixed' }, critical: { action: 'Politely ask for patience while we investigate.', escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag @r-d-team for support. Once resolved, compensate as per the agreement in the escalation.' } },
+    'elite-low': { low: { action: 'Provide education on the workaround. Reassure we are prioritising a fix if none exists.', credits: null }, medium: { action: 'Troubleshoot + set expectations. Add as a new bug for R&D.', credits: 1500, creditType: 'fixed' }, high: { action: 'Politely ask for patience while we investigate. Escalate on #cs-escalations and tag @r-d-team. Once resolved.', credits: 2000, creditType: 'fixed' }, critical: { action: 'Politely ask for patience while we investigate.', escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag @r-d-team for support. Once resolved, compensate as per the agreement in the escalation.' } },
+    'elite-medium': { low: { action: 'Provide education on the workaround. Reassure we are prioritising a fix if none exists.', credits: null }, medium: { action: 'Troubleshoot + set expectations. If unknown bug, log it on ClickUp for @r-d-team.', credits: 2000, creditType: 'fixed' }, high: { action: 'Politely ask for patience while we investigate. Escalate on #cs-escalations and tag @r-d-team. Once resolved.', credits: 2500, creditType: 'fixed' }, critical: { action: 'Politely ask for patience while we investigate.', escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag @r-d-team for support. Once resolved, compensate as per the agreement in the escalation.' } },
+    'elite-high':   { low: { action: 'Provide education on the workaround. Reassure we are prioritising a fix if none exists.', credits: null }, medium: { action: 'Troubleshoot + set expectations. If unknown bug, log it on ClickUp for @r-d-team.', credits: 2500, creditType: 'fixed' }, high: { action: 'Politely ask for patience while we investigate. Escalate on #cs-escalations and tag @r-d-team. Once resolved.', credits: 3000, creditType: 'fixed' }, critical: { action: 'Politely ask for patience while we investigate.', escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag @r-d-team for support. Once resolved, compensate as per the agreement in the escalation.' } },
+    royalty:        { low: { action: 'Provide education on the workaround. Reassure we are prioritising a fix if none exists.', credits: null }, medium: { action: 'Troubleshoot + set expectations. If unknown bug, log it on ClickUp for @r-d-team.', credits: 3000, creditType: 'fixed' }, high: { action: 'Politely ask for patience while we investigate. Escalate on #cs-escalations and tag @r-d-team. Once resolved.', credits: 4000, creditType: 'fixed' }, critical: { action: 'Politely ask for patience while we investigate.', escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag @r-d-team for support. Once resolved, compensate as per the agreement in the escalation.' } }
+  },
+  'communication': {
+    new: {
+      low:      { under: { action: 'Own your mistake, clarify and confirm next steps.', credits: null }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      medium:   { under: { action: 'Deliver the promise immediately, or if not possible due to external reasons (supplier, bug), set a cadence of regular updates and honor them. Once resolved.', credits: 1000, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      high:     { under: { escalate: true, escalateMsg: 'Escalate to Team Lead immediately for de-escalation and single ownership.' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      critical: { under: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } }
+    },
+    core:        { low: { action: 'Own your mistake, clarify and confirm next steps.', credits: null }, medium: { action: 'Deliver the promise immediately, or if not possible due to external reasons, set a cadence of regular updates and honor them. Once resolved.', credits: 500, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+    'elite-low': { low: { action: 'Own your mistake, clarify and confirm next steps.', credits: null }, medium: { action: 'Deliver the promise immediately, or if not possible due to external reasons, set a cadence of regular updates and honor them. Once resolved.', credits: 500, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+    'elite-medium': { low: { action: 'Own your mistake, clarify and confirm next steps.', credits: null }, medium: { action: 'Deliver the promise immediately, or if not possible due to external reasons, set a cadence of regular updates and honor them. Once resolved.', credits: 1000, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' } },
+    'elite-high':   { low: { action: 'Own your mistake, clarify and confirm next steps.', credits: null }, medium: { action: 'Deliver the promise immediately, or if not possible due to external reasons, set a cadence of regular updates and honor them. Once resolved.', credits: 1000, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' } },
+    royalty:        { low: { action: 'Own your mistake, clarify and confirm next steps.', credits: null }, medium: { action: 'Deliver the promise immediately, or if not possible due to external reasons, set a cadence of regular updates and honor them. Once resolved.', credits: 1500, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' } }
+  },
+  'goodwill': {
+    new: {
+      low:      { under: { action: 'Welcome the new player. Educate on available options (Fast Lane, Discord, Smart Pay, etc.).', credits: 1000, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      medium:   { under: { action: 'Clarify, reassure, and appreciate.', credits: 1500, creditType: 'fixed' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      high:     { under: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, over: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' } },
+      critical: { under: { action: 'N/A' }, over: { action: 'N/A' } }
+    },
+    core:        { low: { action: 'Talk to the player. Educate on available options (Fast Lane, Discord, etc.).', credits: null }, medium: { action: 'Clarify, reassure, and appreciate.', credits: 1000, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { action: 'N/A' } },
+    'elite-low': { low: { action: 'Talk to the player. Educate on available options (Fast Lane, Discord, etc.).', credits: null }, medium: { action: 'Clarify, reassure, and appreciate.', credits: 1000, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { action: 'N/A' } },
+    'elite-medium': { low: { action: 'Talk to the player. Educate on available options (Fast Lane, Discord, etc.). If the player shared actionable feedback, pass it on to your Team Lead.', credits: null }, medium: { action: 'Clarify, reassure, and appreciate.', credits: 1500, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' } },
+    'elite-high':   { low: { action: 'Talk to the player. Educate on available options (Fast Lane, Discord, etc.). If the player shared actionable feedback, pass it on to your Team Lead.', credits: null }, medium: { action: 'Clarify, reassure, and appreciate.', credits: 1500, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.' }, critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' } },
+    royalty:        { low: { action: 'Talk to the player. Educate on available options (Fast Lane, Discord, etc.). If the player shared actionable feedback, pass it on to your Team Lead.', credits: null }, medium: { action: 'Clarify, reassure, and appreciate.', credits: 2000, creditType: 'fixed' }, high: { escalate: true, escalateMsg: 'Escalate to Team Lead immediately for de-escalation and single ownership. TL to notify the Growth team for follow-up if there is a churn risk.' }, critical: { escalate: true, escalateMsg: 'Escalate on #cs-escalations and tag Team Lead immediately for de-escalation and single ownership.', reminder: 'Once resolved, TL to escalate on #cs-escalation and tag @growth-team for possible Discord follow-up if there is a churn risk.' } }
+  }
+};
+
+const tierLabels = { new:'New', core:'Core', 'elite-low':'Elite Low', 'elite-medium':'Elite Medium', 'elite-high':'Elite High', royalty:'Royalty' };
+const reasonLabels = { 'delay-no-loss':'Order Delay / No Loss', 'delay-loss':'Order Delay / Loss of Items', 'supplier-error':'Supplier Purchase Errors', 'security':'Security Concerns', 'technical':'Technical Issues', 'communication':'Communication / Bad Experience', 'goodwill':'Goodwill' };
+
+function getEntry() {
+  const { reason, tier, sev, order } = state;
+  if (!reason || !tier || !sev) return null;
+  const sevData = data[reason]?.[tier]?.[sev];
+  if (!sevData) return null;
+  if ('under' in sevData || 'over' in sevData) return sevData[order] || sevData['under'];
+  return sevData;
+}
+
+function rawSevData() {
+  const { reason, tier, sev } = state;
+  return data[reason]?.[tier]?.[sev];
+}
+
+function isPercent(entry) { return entry?.creditType?.startsWith('percent'); }
+
+function calcCredits(entry, val) {
+  if (!entry?.credits || entry.creditType === 'fixed') return null;
+  if (!val || isNaN(val) || val <= 0) return null;
+  const base = Math.round((entry.credits / 100) * val);
+  const bonus = entry.bonus ? Math.round((entry.bonus / 100) * val) : 0;
+  return { base, bonus, total: base + bonus };
+}
+
+function fmt(n) { return Number(n).toLocaleString('en-US'); }
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.dataset.original;
+    btn.classList.add('copied'); btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = orig; }, 2000);
+  });
+}
+
+function render() {
+  const { reason, tier, sev, orderValue } = state;
+
+  // Sev descriptions
+  const sevDesc = document.getElementById('sev-descriptions');
+  if (reason && severityDescriptions[reason]) {
+    const d = severityDescriptions[reason];
+    sevDesc.style.display = 'block';
+    sevDesc.innerHTML = ['low','medium','high','critical'].map(s =>
+      `<div class="sev-row"><strong class="tag-${s}">${s.toUpperCase()}</strong> ${d[s]}</div>`
+    ).join('');
+  } else { sevDesc.style.display = 'none'; }
+
+  const entry = getEntry();
+  const raw = rawSevData();
+  const hasThreshold = raw && ('under' in raw || 'over' in raw);
+
+  // Show order section?
+  const orderSec = document.getElementById('order-section');
+  const thresholdCol = document.getElementById('order-threshold-col');
+  const valueCol = document.getElementById('order-value-col');
+
+  const needsPercentCalc = entry && isPercent(entry);
+  const showOrderSec = hasThreshold || needsPercentCalc;
+  orderSec.className = showOrderSec ? 'order-section show' : 'order-section';
+  thresholdCol.style.display = hasThreshold ? 'flex' : 'none';
+  // Show value input for percent-based that are 'under' threshold OR non-threshold percent tiers
+  valueCol.style.display = (needsPercentCalc && (!hasThreshold || state.order === 'under')) ? 'flex' : 'none';
+
+  // Result
+  const container = document.getElementById('result-container');
+  if (!reason || !tier || !sev) {
+    container.innerHTML = `<div class="empty-state"><span class="arrow">↑</span>Select reason, tier &amp; severity to see the compensation guide</div>`;
+    return;
+  }
+  if (!entry) {
+    container.innerHTML = `<div class="empty-state"><span class="arrow">⚠</span>No data for this combination.</div>`;
+    return;
+  }
+
+  const calc = calcCredits(entry, orderValue);
+
+  // Action
+  let actionHTML = '';
+  if (entry.action && entry.action !== 'N/A') {
+    actionHTML = `<div class="result-section">
+      <h3>Required Action</h3>
+      <p id="action-text">${entry.action}</p>
+      <button class="copy-btn" data-original="⎘ Copy action" onclick="copyText(document.getElementById('action-text').innerText,this)">⎘ Copy action</button>
+    </div>`;
+  }
+
+  // Credits
+  let creditHTML = '';
+  if (entry.credits && entry.creditType === 'fixed') {
+    creditHTML = `<div class="result-section">
+      <h3>Compensation</h3>
+      <span class="credit-big">${fmt(entry.credits)}</span>
+      <span class="credit-label">credits for experience</span>
+      <br><button class="copy-btn" style="margin-top:10px;" data-original="⎘ Copy amount" onclick="copyText('${entry.credits}',this)">⎘ Copy amount</button>
+    </div>`;
+  } else if (entry.credits && isPercent(entry)) {
+    if (calc) {
+      creditHTML = `<div class="result-section">
+        <h3>Compensation</h3>
+        <span class="credit-big calculated">${fmt(calc.total)} credits</span>
+        <span class="credit-label">${entry.credits}% ${entry.creditType === 'percent-purchase' ? 'of affected purchase' : 'of affected order'} = ${fmt(calc.base)}</span>
+        ${entry.bonus ? `<span class="credit-bonus">+ ${entry.bonus}% bonus (${entry.bonusLabel||''}) = ${fmt(calc.bonus)}</span>` : ''}
+        <br><button class="copy-btn" style="margin-top:10px;" data-original="⎘ Copy total" onclick="copyText('${calc.total}',this)">⎘ Copy total</button>
+      </div>`;
+    } else {
+      creditHTML = `<div class="result-section">
+        <h3>Compensation</h3>
+        <span class="credit-big">${entry.credits}%</span>
+        <span class="credit-label">${entry.creditType === 'percent-purchase' ? 'of affected purchase' : 'of affected order'}</span>
+        ${entry.bonus ? `<span class="credit-bonus">+ ${entry.bonus}% ${entry.bonusLabel||''}</span>` : ''}
+        <span class="credit-hint">↑ Enter order amount above to calculate exact credits</span>
+      </div>`;
+    }
+  } else if (!entry.credits && !entry.escalate && entry.action !== 'N/A') {
+    creditHTML = `<div class="result-section"><h3>Compensation</h3><span style="font-size:13px;color:var(--text-muted);">No credits — action only</span></div>`;
+  }
+
+  const naHTML = entry.action === 'N/A' ? `<div style="padding:0 24px 24px;color:var(--text-muted);font-size:13px;">N/A for this combination.</div>` : '';
+
+  let escalationHTML = '';
+  if (entry.escalate && entry.escalateMsg) {
+    escalationHTML = `<div class="escalation-box">
+      <div class="esc-title">🚨 Escalation Required</div>
+      <span id="esc-text">${entry.escalateMsg}</span><br>
+      <button class="esc-copy-btn" data-original="⎘ Copy escalation note" onclick="copyText(document.getElementById('esc-text').innerText,this)">⎘ Copy escalation note</button>
+    </div>`;
+  }
+
+  let reminderHTML = '';
+  if (entry.reminder) {
+    reminderHTML = `<div class="reminder-box"><div class="rem-title">📌 TL Reminder</div>${entry.reminder}</div>`;
+  }
+
+  const hasBody = (actionHTML || creditHTML) && entry.action !== 'N/A';
+
+  container.innerHTML = `<div class="result-card">
+    <div class="result-header">
+      <span class="badge badge-${sev}">${sev.toUpperCase()}</span>
+      <span class="result-title">${reasonLabels[reason]} — ${tierLabels[tier]}</span>
+    </div>
+    ${hasBody ? `<div class="result-body">${actionHTML}${creditHTML}</div>` : ''}
+    ${naHTML}${escalationHTML}${reminderHTML}
+  </div>`;
+}
+
+document.getElementById('reason-grid').addEventListener('click', e => {
+  const btn = e.target.closest('[data-reason]'); if (!btn) return;
+  state.reason = btn.dataset.reason; state.sev = null;
+  document.querySelectorAll('[data-reason]').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+  document.querySelectorAll('[data-sev]').forEach(b => b.classList.remove('active'));
+  render();
+});
+document.getElementById('tier-grid').addEventListener('click', e => {
+  const btn = e.target.closest('[data-tier]'); if (!btn) return;
+  state.tier = btn.dataset.tier;
+  document.querySelectorAll('[data-tier]').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+  render();
+});
+document.getElementById('sev-grid').addEventListener('click', e => {
+  const btn = e.target.closest('[data-sev]'); if (!btn) return;
+  state.sev = btn.dataset.sev;
+  document.querySelectorAll('[data-sev]').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+  render();
+});
+document.getElementById('order-grid').addEventListener('click', e => {
+  const btn = e.target.closest('[data-order]'); if (!btn) return;
+  state.order = btn.dataset.order;
+  document.querySelectorAll('[data-order]').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+  render();
+});
+document.getElementById('order-value-input').addEventListener('input', e => {
+  state.orderValue = parseFloat(e.target.value) || null;
+  render();
+});
+</script>
+</body>
+</html>
